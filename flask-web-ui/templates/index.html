@@ -1,16 +1,60 @@
 <!--main page-->
 <html>
     <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>
             Stock Prediction Machine Learning Models
         </title>
         <!--JQuery-->
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <title>jQuery UI Datepicker - Default functionality</title>
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+        <link rel="stylesheet" href="{{url_for('static',filename='resources/style.css')}}">
+        <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+        <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+        <script>
+        $( function() {
+            //yesterday's date
+            var today = new Date();
+            var yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            //one year ago
+            var oneYearAgo = new Date(today);
+            oneYearAgo.setFullYear(today.getFullYear() - 1);
+            $( "#datepicker-start" ).datepicker(
+                {
+                    minDate: oneYearAgo,
+                    maxDate: yesterday, 
+                    dateFormat: 'yy-mm-dd',
+                    onSelect: function(dateText, inst) {
+                        $('#datepicker-end').datepicker('option', 'minDate', new Date(new Date(dateText).setDate(new Date(dateText).getDate() + 2)));
+                    }
+                });
+            $( "#datepicker-end" ).datepicker(
+                {
+                    minDate: oneYearAgo, 
+                    maxDate: yesterday, 
+                    dateFormat: 'yy-mm-dd',
+                    onSelect: function(dateText, inst) {
+                        $('#datepicker-start').datepicker('option', 'maxDate', new Date(dateText));
+                    }
+                });
+            
+
+        } );
+        </script>
     </head>
+
     <body>
         <form action = "http://localhost:5000/logout" method = "post">
             <p><input type = "submit" value = "Logout" /></p>
         </form>
+ 
+        <!--Datepicker-->
+        <p>Select the beginning date and the endign dates to gather stock data to train the model with:</p>
+        <p>Start Date: <input type="text" id="datepicker-start"></p>
+        <p>End Date: <input type="text" id="datepicker-end"></p>
+ 
         <form>
             <p>
                 <input type = "text" name = "symbol" placeholder = "Stock Symbol" id='input-symbol'/>
@@ -22,14 +66,20 @@
             $("a#create-model-btn").click(function(event){
                 //dissable default behaviour of the button
                 event.preventDefault();
+                //get the symbol from the input
                 var symbol = $("#input-symbol").val();
+                //get the start and end dates from the datepickers
+                var startDate = $("#datepicker-start").val();
+                var endDate = $("#datepicker-end").val();
                 //if symbol is not empty
                 if (symbol != ""){
                     $.ajax({
                         url: "http://localhost:5000/createmodel",
                         type: "POST",
                         data: {
-                            symbol: symbol
+                            symbol: symbol,
+                            startDate: startDate,
+                            endDate: endDate
                         },
                         success: function(data){
                             console.log(data);

@@ -43,14 +43,32 @@ def logout():
 
 @app.route('/createmodel', methods=['POST'])
 def create_model():
-    from ml_models import create_model
+    from ml_models import train_model, create_model
     import datetime as dt
     symbol = request.form['symbol']
-    start = dt.datetime.now().date() - dt.timedelta(days=20)
-    end = start + dt.timedelta(days=1)
+    start = request.form['startDate']
+    end = request.form['endDate']
+    #dictionary to store the results
+    mc_res = {}
     #create new thread to create model
-    thread = threading.Thread(target=create_model, args=(symbol, start, end))
-    thread.start()
+    cm_thread = threading.Thread(target=create_model, args=(symbol, start, end, mc_res))
+    cm_thread.start()
+    cm_thread.join()
+    #if model creation was not successful then return error message
+    if 'error' in mc_res:
+        return jsonify({'status':mc_res['error']})
+    
+    #dictionary to store the results
+    tm_res = {}
+    #thread to train model
+    tm_thread = threading.Thread(target=train_model, args=(symbol,tm_res))
+    tm_thread.start()
+    tm_thread.join()
+    #if model training was not successful then return error message
+    if 'error' in tm_res:
+        return jsonify({'status':tm_res['error']})
+    
+    #if successful then return success message
     # send response to client to let them know that the model was created
     response = jsonify({'status': 'Model for ' + symbol + ' created successfully.'})
     #send response to client

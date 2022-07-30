@@ -2,11 +2,53 @@
 <html>
     <head>
         <title>
+            Stock Prediction Machine Learning Models
         </title>
+        <!--JQuery-->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     </head>
     <body>
         <form action = "http://localhost:5000/logout" method = "post">
             <p><input type = "submit" value = "Logout" /></p>
         </form>
+        <form>
+            <p>
+                <input type = "text" name = "symbol" placeholder = "Stock Symbol" id='input-symbol'/>
+                <a href="#" id="create-model-btn"><button>Create Model</button></a>
+            </p>
+            <div id='model-creation-msg'></div>
+        </form>
+        <script type="text/javascript">
+            $("a#create-model-btn").click(function(event){
+                //dissable default behaviour of the button
+                event.preventDefault();
+                var symbol = $("#input-symbol").val();
+                //if symbol is not empty
+                if (symbol != ""){
+                    $.ajax({
+                        url: "http://localhost:5000/createmodel",
+                        type: "POST",
+                        data: {
+                            symbol: symbol
+                        },
+                        success: function(data){
+                            console.log(data);
+                            $("#model-creation-msg").html(data.status);
+                            //reenable the button once the model is created
+                            $("#create-model-btn").prop("disabled", false);
+                        },
+                    });
+                    //message while model is being created with animation of loading icon
+                    $("#model-creation-msg").html("Model creation in progress... Please wait");
+                    $("#model-creation-msg").append("<img src='https://c.tenor.com/wpSo-8CrXqUAAAAi/loading-loading-forever.gif' width='30px'/>");
+                    //dissable the button while model is being created
+                    $("#create-model-btn").prop("disabled", true);
+                }
+                //essage if symbol is empty
+                else{
+                    $("#model-creation-msg").html("Please enter a stock symbol");
+                }
+            });
+        </script>
     </body>
 </html>

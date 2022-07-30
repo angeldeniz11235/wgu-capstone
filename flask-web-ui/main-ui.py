@@ -1,6 +1,10 @@
 #Flask web based UI for the main program
 
 #import flask
+from concurrent.futures import thread
+import threading
+from turtle import st
+from urllib import response
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_session import Session
 
@@ -37,8 +41,21 @@ def logout():
     session.clear()
     return redirect(url_for('login'))
 
-#@app.route('/home')
-
+@app.route('/createmodel', methods=['POST'])
+def create_model():
+    from ml_models import create_model
+    import datetime as dt
+    symbol = request.form['symbol']
+    start = dt.datetime.now().date() - dt.timedelta(days=20)
+    end = start + dt.timedelta(days=1)
+    #create new thread to create model
+    thread = threading.Thread(target=create_model, args=(symbol, start, end))
+    thread.start()
+    # send response to client to let them know that the model was created
+    response = jsonify({'status': 'Model for ' + symbol + ' created successfully.'})
+    #send response to client
+    return response
+    
 
 if __name__ == '__main__':
     app.run(debug=True)

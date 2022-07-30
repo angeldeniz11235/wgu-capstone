@@ -13,15 +13,17 @@ from tensorflow.keras import layers
 from tensorflow.keras import activations
 from sklearn.metrics import confusion_matrix, classification_report
 
-    # Import the API keys
-def get_data(symbol_, start_date, end_date):
+def create_model(symbol_, start_date, end_date):
     
+    print("Creating model for:", symbol_)
+    # Import the API keys
     api_id = "PKLXRG5MYKH326I8J1DV"
     api_secret = "TxPfLNWc7HlulXh17NLCX0ser8wrlqXmbjYKriiB"
 
     # Create the REST API object for paper trading
     rest_api = REST(api_id, api_secret,'https://paper-api.alpaca.markets')
     
+    print("Getting data for:", symbol_)
     # Get bar data for apple stock from the last 2 years
     bar_data = rest_api.get_bars(symbol_, TimeFrame.Minute, start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"))
 
@@ -31,9 +33,13 @@ def get_data(symbol_, start_date, end_date):
         bar_data.df.to_pickle(f"data/{symbol_}_bar_data.pkl")
     # else, return an error message
     else:
-        return "No data found for " + symbol_
-
-
+        print("No data found for:", symbol_)
+        return
+    
+    #set bar_data to the dataframe from bar_data.df
+    bar_data = bar_data.df
+    
+    print("Processing data for:", symbol_)
     #convert the dataframe index to a column
     bar_data['DateTime'] = bar_data.index.to_pydatetime()
     # remove the index from the dataframe
@@ -50,7 +56,7 @@ def get_data(symbol_, start_date, end_date):
     dates = list(map(lambda x: x.strftime('%Y-%m-%d'), dates))
     
     # in a new dataframe, for each date in the array, create a columns for every vwap value for that date
-    bar_data = pd.DataFrame(index=dates, columns=range(0, 1000))
+    tmp_df = pd.DataFrame(index=dates, columns=range(0, 1000))
 
     # get all vwap values for each date
     for date in dates:
@@ -59,7 +65,9 @@ def get_data(symbol_, start_date, end_date):
         # fill vwap list with zeros to match the length of the columns
         vwap = vwap + [0] * (1000 - len(vwap))
         # create a column for that date
-        bar_data.loc[date] = vwap
+        tmp_df.loc[date] = vwap
+    # set bar_data to the tmp_df
+    bar_data = tmp_df
 
     #save the dataframe to a pickle file
     bar_data.to_pickle(f'data/{symbol_}_df.pkl')
@@ -113,7 +121,9 @@ def get_data(symbol_, start_date, end_date):
 
     # save the dataframe to a pickle file
     bar_data.to_pickle(f'data/{symbol_}_df_ML.pkl')
-
+    
+    print("Data for:", symbol_, "successfully processed")
+    return True
 
 def train_model(symbol_):
     
@@ -153,7 +163,7 @@ def train_model(symbol_):
 def test():
     end = dt.datetime.now().date() - dt.timedelta(days=1)
     start = end - dt.timedelta(days=end.day)
-    get_data("dfsdews", start, end)    
+    create_model("dfsdews", start, end)    
     
     
 if __name__ == "__main__":

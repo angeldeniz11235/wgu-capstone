@@ -70,9 +70,9 @@ def create_model():
     
     #if successful then return success message
     # send response to client to let them know that the model was created
-    response = jsonify({'status': 'Model for ' + symbol + ' created successfully.'})
-    #send response to client
-    return response
+    res = {'status': 'Model for ' + symbol + ' created successfully.'}
+    res['heatmap_url'] = tm_res['heatmap_url']
+    return jsonify(res)
     
 
 if __name__ == '__main__':

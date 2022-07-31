@@ -1,9 +1,16 @@
+from ntpath import realpath
+import os
 from alpaca_trade_api.rest import REST, TimeFrame
 from alpaca_trade_api.stream import Stream
 import datetime as dt
 import pickle
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import io 
+import base64
+import seaborn as sns
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 import tensorflow as tf
@@ -180,6 +187,20 @@ def train_model(symbol_, result={}):
         print('ML Training - Model saved for:', symbol_)
         
         result['success'] = True
+
+        #build seaborn heatmap of the confusion matrix for the model
+        fig, ax = plt.subplots(figsize=(10,10))
+        ax=sns.set(style="darkgrid")
+        canvas = FigureCanvas(fig)
+        sns.heatmap(confusion_matrix(y_test, predictions), annot=True, fmt='d', cmap='Blues')
+        #save the heatmap
+        img = io.BytesIO()
+        img_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'static/resources/img/')
+        fig.savefig(f'{img_dir}{symbol_}_ML_heatmap.png', format='png')
+        img.seek(0)
+        heatmap_url = base64.b64encode(img.getvalue()).decode('utf-8')
+        result['heatmap_url'] = heatmap_url
+        
         
     except Exception as e:
         print('ML Training - Error:', e)

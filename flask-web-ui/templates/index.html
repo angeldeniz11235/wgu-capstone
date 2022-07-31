@@ -84,6 +84,8 @@
                         success: function(data){
                             console.log(data);
                             $("#model-creation-msg").html(data.status);
+                            $("#input-symbol").val("");
+                            $("#model-creation-msg").append(data.heatmap_url);
                             //reenable the button once the model is created
                             $("#create-model-btn").prop("disabled", false);
                         },

@@ -2,6 +2,7 @@
 
 #import flask
 from concurrent.futures import thread
+import os
 import threading
 from turtle import st
 from urllib import response
@@ -21,7 +22,9 @@ def index():
     #if 'username' in session then redirect to /index.html
     if not 'username' in session:
         return redirect(url_for('login'))
-    return render_template('index.html', username=session['username'])
+    #get list of models in the /models folder
+    dict_of_models = {"models": os.listdir('models')}
+    return render_template('index.html', username=session['username'], models=dict_of_models)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -72,7 +75,12 @@ def create_model():
     #if successful then return success message
     # send response to client to let them know that the model was created
     res = {'status': 'Model for ' + symbol + ' created successfully.'}
+    
+    #add the img paths (plots/charts) to the response
     res['heatmap_img'] = tm_res['heatmap_img']
+    res['model_loss_img'] = tm_res['model_loss_img']
+    
+    #add the model info to the response
     return jsonify(res)
     
 

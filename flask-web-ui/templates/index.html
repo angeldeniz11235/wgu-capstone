@@ -41,7 +41,7 @@
                 });
             
             //hide images 
-            $('#hidden-img').hide();
+            $('.hidden-img').hide();
 
         } );
         </script>
@@ -127,10 +127,15 @@
                             //reenable the button once the model is created
                             $("#create-model-btn").prop("disabled", false);
                             //show heatmap of the model
-                            $("#heatmap-img").before("<p></p><p>Heatmap of the model:</p>");
+                            $("#heatmap-img").before("<p></p><p>Heatmap of the confusion matrix:</p>");
                             //unhide the image
-                            $('#hidden-img').show();
+                            $('.hidden-img').show();// unhides all the images with the class "hidden-img"
+                            //set the image source to the heatmap image
                             $("#heatmap-img").attr("src", "{{url_for('static',filename='resources/img/')}}".concat(data.heatmap_img));
+                            //set the image source to the model loss image
+                            $("#model-loss-img").before("<p></p><p>Model Loss Plot:</p>");
+                            $("#model-loss-img").attr("src", "{{url_for('static',filename='resources/img/')}}".concat(data.model_loss_img));
+                            
                         },
                     });
                     //message while model is being created with animation of loading icon
@@ -146,6 +151,16 @@
             });
         </script>
         <!--heatmap image-->
-        <div id="hidden-img"><img id="heatmap-img" src="" width="500px"></div>
+        <div class="hidden-img"><img id="heatmap-img" src="" width="500px"></div>
+        <!--model loss plot image-->
+        <div class="hidden-img"><img id="model-loss-img" src="" width="500px"></div>
+
+        <!--Dropdown selector for available models in /models dir-->
+        <p>Select a model to use:</p>
+        <select id="model-selector">
+            {% for model in models['models'] %}
+                <option value="{{model}}">{{model}}</option>
+            {% endfor %}
+        </select>
     </body>
 </html>

@@ -182,8 +182,11 @@ def train_model(symbol_, nn_layers=[], result={}):
         model.fit(x=X_train, y=y_train, epochs=1000, batch_size=256, validation_data=(X_test, y_test), verbose=1, callbacks=[callback])
         print('ML Training - Done Model trained for:', symbol_)
         
+        # save the model history for the matplotlib plot
+        model_history = model.history.history
+        
         # if model.predict(X_test) > 0.44 then 1 else 0:
-        predictions = model.predict(X_test)
+        predictions = model.predict(X_test) #this clears the model.history object
         offset = .00
         predictions[predictions > (predictions.mean() + offset)] = 1
         predictions[predictions <= (predictions.mean() + offset)] = 0
@@ -194,11 +197,13 @@ def train_model(symbol_, nn_layers=[], result={}):
         
         result['success'] = True
 
-        #build seaborn heatmap of the confusion matrix for the model
+        #build seaborn heatmap of the confusion matrix for the model and save it to a png file named after the symbol
         fig, ax = plt.subplots(figsize=(10,10))
         ax=sns.set(style="darkgrid")
         canvas = FigureCanvas(fig)
-        sns.heatmap(confusion_matrix(y_test, predictions), annot=True, fmt='d', cmap='Blues')
+        heatmap = sns.heatmap(confusion_matrix(y_test, predictions), annot=True, fmt='d', cmap='Blues')
+        #set labels for the heatmap
+        fig.suptitle(f'{symbol_} ML Confusion Matrix', fontsize=20)
         #save the heatmap
         img = io.BytesIO()
         img_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'static/resources/img/')
@@ -206,6 +211,12 @@ def train_model(symbol_, nn_layers=[], result={}):
         img.seek(0)
         heatmap_img = f'{symbol_}_ML_heatmap.png'
         result['heatmap_img'] = heatmap_img
+        
+        #build a matlibplot plot of model loss and save it to a png file named after the symbol
+        plot = pd.DataFrame(model_history).plot(figsize=(10,10))
+        fig = plot.get_figure()
+        fig.savefig(f'{img_dir}{symbol_}_ML_loss.png', format='png')
+        result['model_loss_img'] = f'{symbol_}_ML_loss.png'
         
         
     except Exception as e:
@@ -217,7 +228,7 @@ def test():
   #  end = dt.datetime.now().date() - dt.timedelta(days=1)
   #  start = end - dt.timedelta(days=end.day)
   #  create_model("dfsdews", start, end)    
-  train_model("aapl")  
+  train_model("aapl", [750, 100, 30], {})  
     
 if __name__ == "__main__":
     test()

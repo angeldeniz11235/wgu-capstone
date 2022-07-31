@@ -90,6 +90,7 @@
                             //reenable the button once the model is created
                             $("#create-model-btn").prop("disabled", false);
                             //show heatmap of the model
+                            $("#heatmap-btn").prepend("<p></p><p>Heatmap of the model:</p>");
                             $("#heatmap-img").attr("src", "{{url_for('static',filename='resources/img/')}}".concat(data.heatmap_img));
                         },
                     });
@@ -105,6 +106,6 @@
                 }
             });
         </script>
-        <img id="heatmap-img" src="">
+        <img id="heatmap-img" src="" width="300px">
     </body>
 </html>

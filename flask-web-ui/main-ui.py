@@ -45,6 +45,7 @@ def logout():
 def create_model():
     from ml_models import train_model, create_model
     import datetime as dt
+    nn_layers = request.form.getlist('hiddenLayers')
     symbol = request.form['symbol']
     start = request.form['startDate']
     end = request.form['endDate']
@@ -61,7 +62,7 @@ def create_model():
     #dictionary to store the results
     tm_res = {}
     #thread to train model
-    tm_thread = threading.Thread(target=train_model, args=(symbol,tm_res))
+    tm_thread = threading.Thread(target=train_model, args=(symbol, nn_layers, tm_res))
     tm_thread.start()
     tm_thread.join()
     #if model training was not successful then return error message

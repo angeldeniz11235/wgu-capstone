@@ -40,6 +40,8 @@
                     }
                 });
             
+            //hide images 
+            $('#hidden-img').hide();
 
         } );
         </script>
@@ -54,7 +56,28 @@
         <p>Select the beginning date and the endign dates to gather stock data to train the model with:</p>
         <p>Start Date: <input type="text" id="datepicker-start"></p>
         <p>End Date: <input type="text" id="datepicker-end"></p>
+
+        <!--Neural Network parameter form-->
+        <p>
+            Enter the number of hidden layers (optional): <input type="text" id="hidden-layers">
+            <a href="#" id="create-hidden-layers"><button>Create Layers</button></a>
+        </p>
+        <div id="hidden-layers-inputs"></div>
+        <script type="text/javascript">
+            //set behaviour for create hidden layers button
+            $('#create-hidden-layers').click(function(event){
+                //prevent default behaviour
+                event.preventDefault();
+                //get number of hidden layers
+                var hiddenLayers = $('#hidden-layers').val();
+                //create hidden layers
+                for(var i = 0; i < hiddenLayers; i++){
+                    $('#hidden-layers-inputs').append('<p>Number of Nodes for Hidden Layer ' + (i+1) + ': <input type="text" id="hidden-layer-' + (i+1) +'" value=1 ></p>');
+                }
+            }); 
+        </script>
  
+        <!--stock symbol input-->
         <form>
             <p>
                 <input type = "text" name = "symbol" placeholder = "Stock Symbol" id='input-symbol'/>
@@ -71,12 +94,26 @@
                 //get the start and end dates from the datepickers
                 var startDate = $("#datepicker-start").val();
                 var endDate = $("#datepicker-end").val();
+                //get the number of hidden layers
+                var hiddenLayers = $('#hidden-layers').val();
+                //get the number of nodes for each hidden layer
+                var hiddenLayerNodes = [];
+                for(var i = 0; i < hiddenLayers; i++){
+                    //check if the hidden layer input is empty
+                    if ($('#hidden-layer-' + (i+1)).val() == ''){
+                        $('#model-creation-msg').html('<p>Please enter the number of nodes for each hidden layer</p>');
+                        return;
+                    }
+                    // add the number of nodes to the array
+                    hiddenLayerNodes.push($('#hidden-layer-' + (i+1)).val());
+                }
                 //if symbol is not empty
                 if (symbol != ""){
                     $.ajax({
                         url: "http://localhost:5000/createmodel",
                         type: "POST",
                         data: {
+                            hiddenLayers: hiddenLayerNodes,
                             symbol: symbol,
                             startDate: startDate,
                             endDate: endDate
@@ -90,7 +127,9 @@
                             //reenable the button once the model is created
                             $("#create-model-btn").prop("disabled", false);
                             //show heatmap of the model
-                            $("#heatmap-btn").prepend("<p></p><p>Heatmap of the model:</p>");
+                            $("#heatmap-img").before("<p></p><p>Heatmap of the model:</p>");
+                            //unhide the image
+                            $('#hidden-img').show();
                             $("#heatmap-img").attr("src", "{{url_for('static',filename='resources/img/')}}".concat(data.heatmap_img));
                         },
                     });
@@ -106,6 +145,7 @@
                 }
             });
         </script>
-        <img id="heatmap-img" src="" width="300px">
+        <!--heatmap image-->
+        <div id="hidden-img"><img id="heatmap-img" src="" width="500px"></div>
     </body>
 </html>

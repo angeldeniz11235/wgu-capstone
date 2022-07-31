@@ -144,7 +144,7 @@ def create_model(symbol_, start_date, end_date, result={}):
         result['error'] = str(e)
     
 
-def train_model(symbol_, result={}):
+def train_model(symbol_, nn_layers=[], result={}):
     
     try:
         #load apple_df_ML.pkl
@@ -158,10 +158,16 @@ def train_model(symbol_, result={}):
         X_train = scaler.transform(X_train)
         X_test = scaler.transform(X_test)
         
+        # create the neural network architecture
         model = Sequential()
-
-        model.add(Dense(units=750, activation=activations.gelu))
-        model.add(Dropout(0.02))
+        # check if the nn_layers is empty
+        if nn_layers != []:
+            for num_nodes in nn_layers:
+                model.add(Dense(units=num_nodes, activation=activations.gelu))
+                model.add(Dropout(0.2))    
+        else:
+            model.add(Dense(units=750, activation=activations.gelu))
+            model.add(Dropout(0.02))
 
         model.add(Dense(units=1, activation=activations.sigmoid))
 

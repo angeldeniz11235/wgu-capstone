@@ -8,8 +8,10 @@
         </title>
         <!--JQuery-->
         <title>jQuery UI Datepicker - Default functionality</title>
-        <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-        <link rel="stylesheet" href="{{url_for('static',filename='resources/style.css')}}">
+        <link rel="stylesheet"
+            href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+        <link rel="stylesheet"
+            href="{{url_for('static',filename='resources/style.css')}}">
         <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
         <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
         <script>
@@ -39,6 +41,36 @@
                         $('#datepicker-start').datepicker('option', 'maxDate', new Date(dateText));
                     }
                 });
+
+            //calendar for Prediction Date
+            $( "#datepicker-prediction" ).datepicker(
+                {
+                    minDate: oneYearAgo, 
+                    maxDate: new Date(),//today 
+                    dateFormat: 'yy-mm-dd',
+                    onSelect: function(dateText, inst) {
+                        //check if date is a valid trading day by sending the selected date to /check_valid_date
+                        $.ajax({
+                            url: '/check_valid_date',
+                            type: 'POST',
+                            data: {
+                                date: dateText
+                            },
+                            success: function(data) {
+                                if(data.valid == 'true') {
+                                    //clear prediction error message
+                                    $('#prediction-err-msg p').text('');
+                                    $('#datepicker-prediction').css('background-color', '#5df0a4');
+                                } else {
+                                    //clear prediction error message
+                                    $('#prediction-error-msg p').text('');
+                                    $('#datepicker-prediction').css('background-color', '#ff0000');
+                                    $('#prediction-err-msg p').text('That date is not a valid trading date. Please choose a different date.');
+                                }
+                            }
+                        });
+                    }
+                });
             
             //hide images 
             $('.hidden-img').hide();
@@ -48,119 +80,146 @@
     </head>
 
     <body>
-        <form action = "http://localhost:5000/logout" method = "post">
-            <p><input type = "submit" value = "Logout" /></p>
-        </form>
- 
-        <!--Datepicker-->
-        <p>Select the beginning date and the endign dates to gather stock data to train the model with:</p>
-        <p>Start Date: <input type="text" id="datepicker-start"></p>
-        <p>End Date: <input type="text" id="datepicker-end"></p>
+        <div id="model-creation">
+            <form action="http://localhost:5000/logout" method="post">
+                <p><input type="submit" value="Logout" /></p>
+            </form>
 
-        <!--Neural Network parameter form-->
-        <p>
-            Enter the number of hidden layers (optional): <input type="text" id="hidden-layers">
-            <a href="#" id="create-hidden-layers"><button>Create Layers</button></a>
-        </p>
-        <div id="hidden-layers-inputs"></div>
-        <script type="text/javascript">
-            //set behaviour for create hidden layers button
-            $('#create-hidden-layers').click(function(event){
-                //prevent default behaviour
-                event.preventDefault();
-                //get number of hidden layers
-                var hiddenLayers = $('#hidden-layers').val();
-                //create hidden layers
-                for(var i = 0; i < hiddenLayers; i++){
-                    $('#hidden-layers-inputs').append('<p>Number of Nodes for Hidden Layer ' + (i+1) + ': <input type="text" id="hidden-layer-' + (i+1) +'" value=1 ></p>');
-                }
-            }); 
-        </script>
- 
-        <!--stock symbol input-->
-        <form>
+            <h1>Machine Learning Model Creation</h1>
+            <!--Datepicker-->
+            <p>Select the beginning date and the endign dates to gather stock
+                data to train the model with:</p>
+            <p>Start Date: <input type="text" id="datepicker-start"></p>
+            <p>End Date: <input type="text" id="datepicker-end"></p>
+
+            <!--Neural Network parameter form-->
             <p>
-                <input type = "text" name = "symbol" placeholder = "Stock Symbol" id='input-symbol'/>
-                <a href="#" id="create-model-btn"><button>Create Model</button></a>
+                Enter the number of hidden layers (optional): <input type="text"
+                    id="hidden-layers">
+                <a href="#" id="create-hidden-layers"><button>Create Layers</button></a>
             </p>
-            <div id='model-creation-msg'></div>
-        </form>
-        <script type="text/javascript">
-            $("a#create-model-btn").click(function(event){
-                //dissable default behaviour of the button
-                event.preventDefault();
-                //get the symbol from the input
-                var symbol = $("#input-symbol").val();
-                //get the start and end dates from the datepickers
-                var startDate = $("#datepicker-start").val();
-                var endDate = $("#datepicker-end").val();
-                //get the number of hidden layers
-                var hiddenLayers = $('#hidden-layers').val();
-                //get the number of nodes for each hidden layer
-                var hiddenLayerNodes = [];
-                for(var i = 0; i < hiddenLayers; i++){
-                    //check if the hidden layer input is empty
-                    if ($('#hidden-layer-' + (i+1)).val() == ''){
-                        $('#model-creation-msg').html('<p>Please enter the number of nodes for each hidden layer</p>');
-                        return;
+            <div id="hidden-layers-inputs"></div>
+            <script type="text/javascript">
+                //set behaviour for create hidden layers button
+                $('#create-hidden-layers').click(function(event){
+                    //prevent default behaviour
+                    event.preventDefault();
+                    //get number of hidden layers
+                    var hiddenLayers = $('#hidden-layers').val();
+                    //create hidden layers
+                    for(var i = 0; i < hiddenLayers; i++){
+                        $('#hidden-layers-inputs').append('<p>Number of Nodes for Hidden Layer ' + (i+1) + ': <input type="text" id="hidden-layer-' + (i+1) +'" value=1 ></p>');
                     }
-                    // add the number of nodes to the array
-                    hiddenLayerNodes.push($('#hidden-layer-' + (i+1)).val());
-                }
-                //if symbol is not empty
-                if (symbol != ""){
-                    $.ajax({
-                        url: "http://localhost:5000/createmodel",
-                        type: "POST",
-                        data: {
-                            hiddenLayers: hiddenLayerNodes,
-                            symbol: symbol,
-                            startDate: startDate,
-                            endDate: endDate
-                        },
-                        success: function(data){
-                            console.log(data);
-                            $("#model-creation-msg").html(data.status);
-                            $("#input-symbol").val("");
-                            $("#datepicker-start").val("");
-                            $("#datepicker-end").val("");
-                            //reenable the button once the model is created
-                            $("#create-model-btn").prop("disabled", false);
-                            //show heatmap of the model
-                            $("#heatmap-img").before("<p></p><p>Heatmap of the confusion matrix:</p>");
-                            //unhide the image
-                            $('.hidden-img').show();// unhides all the images with the class "hidden-img"
-                            //set the image source to the heatmap image
-                            $("#heatmap-img").attr("src", "{{url_for('static',filename='resources/img/')}}".concat(data.heatmap_img));
-                            //set the image source to the model loss image
-                            $("#model-loss-img").before("<p></p><p>Model Loss Plot:</p>");
-                            $("#model-loss-img").attr("src", "{{url_for('static',filename='resources/img/')}}".concat(data.model_loss_img));
-                            
-                        },
-                    });
-                    //message while model is being created with animation of loading icon
-                    $("#model-creation-msg").html("Model creation in progress... Please wait");
-                    $("#model-creation-msg").append("<img src='https://c.tenor.com/wpSo-8CrXqUAAAAi/loading-loading-forever.gif' width='30px'/>");
-                    //dissable the button while model is being created
-                    $("#create-model-btn").prop("disabled", true);
-                }
-                //essage if symbol is empty
-                else{
-                    $("#model-creation-msg").html("Please enter a stock symbol");
-                }
-            });
-        </script>
-        <!--heatmap image-->
-        <div class="hidden-img"><img id="heatmap-img" src="" width="500px"></div>
-        <!--model loss plot image-->
-        <div class="hidden-img"><img id="model-loss-img" src="" width="500px"></div>
-
-        <!--Dropdown selector for available models in /models dir-->
-        <p>Select a model to use:</p>
-        <select id="model-selector">
-            {% for model in models['models'] %}
-                <option value="{{model}}">{{model}}</option>
-            {% endfor %}
-        </select>
+                }); 
+            </script>
+            <!--stock symbol input-->
+            <form>
+                <p>
+                    <input type="text" name="symbol" placeholder="Stock Symbol"
+                        id='input-symbol'/>
+                    <a href="#" id="create-model-btn"><button>Create Model</button></a>
+                </p>
+                <div id='model-creation-msg'></div>
+            </form>
+            <script type="text/javascript">
+                $("a#create-model-btn").click(function(event){
+                    //dissable default behaviour of the button
+                    event.preventDefault();
+                    //get the symbol from the input
+                    var symbol = $("#input-symbol").val();
+                    //get the start and end dates from the datepickers
+                    var startDate = $("#datepicker-start").val();
+                    var endDate = $("#datepicker-end").val();
+                    //get the number of hidden layers
+                    var hiddenLayers = $('#hidden-layers').val();
+                    //get the number of nodes for each hidden layer
+                    var hiddenLayerNodes = [];
+                    for(var i = 0; i < hiddenLayers; i++){
+                        //check if the hidden layer input is empty
+                        if ($('#hidden-layer-' + (i+1)).val() == ''){
+                            $('#model-creation-msg').html('<p>Please enter the number of nodes for each hidden layer</p>');
+                            return;
+                        }
+                        // add the number of nodes to the array
+                        hiddenLayerNodes.push($('#hidden-layer-' + (i+1)).val());
+                    }
+                    //if symbol is not empty
+                    if (symbol != ""){
+                        $.ajax({
+                            url: "http://localhost:5000/createmodel",
+                            type: "POST",
+                            data: {
+                                hiddenLayers: hiddenLayerNodes,
+                                symbol: symbol,
+                                startDate: startDate,
+                                endDate: endDate
+                            },
+                            success: function(data){
+                                console.log(data);
+                                $("#model-creation-msg").html(data.status);
+                                $("#input-symbol").val("");
+                                $("#datepicker-start").val("");
+                                $("#datepicker-end").val("");
+                                //reenable the button once the model is created
+                                $("#create-model-btn").prop("disabled", false);
+                                //show heatmap of the model
+                                $("#heatmap-img").before("<p></p><p>Heatmap of the confusion matrix:</p>");
+                                //unhide the image
+                                $('.hidden-img').show();// unhides all the images with the class "hidden-img"
+                                //set the image source to the heatmap image
+                                $("#heatmap-img").attr("src", "{{url_for('static',filename='resources/img/')}}".concat(data.heatmap_img));
+                                //set the image source to the model loss image
+                                $("#model-loss-img").before("<p></p><p>Model Loss Plot:</p>");
+                                $("#model-loss-img").attr("src", "{{url_for('static',filename='resources/img/')}}".concat(data.model_loss_img));
+                                
+                            },
+                        });
+                        //message while model is being created with animation of loading icon
+                        $("#model-creation-msg").html("Model creation in progress... Please wait");
+                        $("#model-creation-msg").append("<img src='https://c.tenor.com/wpSo-8CrXqUAAAAi/loading-loading-forever.gif' width='30px'/>");
+                        //dissable the button while model is being created
+                        $("#create-model-btn").prop("disabled", true);
+                    }
+                    //essage if symbol is empty
+                    else{
+                        $("#model-creation-msg").html("Please enter a stock symbol");
+                    }
+                });
+            </script>
+            <!--heatmap image-->
+            <div class="hidden-img"><img id="heatmap-img" src="" width="500px"></div>
+            <!--model loss plot image-->
+            <div class="hidden-img"><img id="model-loss-img" src=""
+                    width="500px"></div>
+        </div>
+        <!--Prediction Section-->
+        <div id="prediction-section">
+            <p><h1>Prediction</h1></p>
+            <!--Dropdown selector for available models in /models dir-->
+            <p>
+                Select a model to use:
+                <select id="model-selector">
+                    {% for model in models['models'] %}
+                    <option value="{{model}}">{{model}}</option>
+                    {% endfor %}
+                </select>
+            </p>
+            <p>
+                Enter the stock symbol:
+                <input type="text" name="symbol" id="prediction-symbol" placeholder="Stock Symbol">
+                <script type="text/javascript">
+                    //set a default value for the stock symbol input
+                    //get the selected model from the dropdown model-selector and split it by '_'
+                    var selectedModel = $("#model-selector").val().split("_");
+                    //get the model name from the split array
+                    var modelName = selectedModel[0];
+                    //set the default value of the stock symbol input to the model name
+                    $("#prediction-symbol").val(modelName);
+                </script>
+                <p>Pick a date to predict: <input type="text" id="datepicker-prediction"></p>
+                <div id="prediction-err-msg"><p></p></div>
+            </p>
+            <a href="#" id="predict-btn"><button>Predict</button></a>
+        </div>
     </body>
 </html>

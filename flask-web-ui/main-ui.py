@@ -83,7 +83,19 @@ def create_model():
     #add the model info to the response
     return jsonify(res)
     
-
+#route to check if a date is a valid trading date 
+@app.route('/check_valid_date', methods=['POST'])
+def check_valid_date():
+    import pandas_market_calendars as mcal
+    nyse = mcal.get_calendar('NYSE')
+    start = request.form['date']
+    end = start
+    nyse_dates = nyse.valid_days(start_date=start, end_date=end) 
+    if len(nyse_dates) == 0:
+        return jsonify({'valid': 'false'})
+    else:
+        return jsonify({'valid': 'true'})
+    
 if __name__ == '__main__':
     app.run(debug=True)
     #app.run(host='

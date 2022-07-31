@@ -85,9 +85,12 @@
                             console.log(data);
                             $("#model-creation-msg").html(data.status);
                             $("#input-symbol").val("");
-                            $("#model-creation-msg").append(data.heatmap_url);
+                            $("#datepicker-start").val("");
+                            $("#datepicker-end").val("");
                             //reenable the button once the model is created
                             $("#create-model-btn").prop("disabled", false);
+                            //show heatmap of the model
+                            $("#heatmap-img").attr("src", "{{url_for('static',filename='resources/img/')}}".concat(data.heatmap_img));
                         },
                     });
                     //message while model is being created with animation of loading icon
@@ -102,5 +105,6 @@
                 }
             });
         </script>
+        <img id="heatmap-img" src="">
     </body>
 </html>

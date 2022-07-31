@@ -71,7 +71,7 @@ def create_model():
     #if successful then return success message
     # send response to client to let them know that the model was created
     res = {'status': 'Model for ' + symbol + ' created successfully.'}
-    res['heatmap_url'] = tm_res['heatmap_url']
+    res['heatmap_img'] = tm_res['heatmap_img']
     return jsonify(res)
     
 

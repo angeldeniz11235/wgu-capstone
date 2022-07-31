@@ -198,8 +198,8 @@ def train_model(symbol_, result={}):
         img_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'static/resources/img/')
         fig.savefig(f'{img_dir}{symbol_}_ML_heatmap.png', format='png')
         img.seek(0)
-        heatmap_url = base64.b64encode(img.getvalue()).decode('utf-8')
-        result['heatmap_url'] = heatmap_url
+        heatmap_img = f'{symbol_}_ML_heatmap.png'
+        result['heatmap_img'] = heatmap_img
         
         
     except Exception as e:

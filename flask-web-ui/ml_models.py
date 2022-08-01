@@ -20,7 +20,7 @@ from tensorflow.keras import layers
 from tensorflow.keras import activations
 from sklearn.metrics import confusion_matrix, classification_report
 
-def get_stock_data(symbol_, start_, end_, result={}):
+def get_stock_data(symbol_, start_, end_, result={}, with_plot=False):
     try:
         #check if timeframe is set, if not set it to minute
         #hack to set a default timeframe
@@ -49,6 +49,24 @@ def get_stock_data(symbol_, start_, end_, result={}):
             bar_data = rest_api.get_bars(symbol=symbol_, timeframe=timeframe, start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"))
         else: 
             bar_data = rest_api.get_bars(symbol=symbol_, timeframe=timeframe, start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"))
+
+        #create plot from bar_data and save it to a file
+        # adjust figure size
+        plt.rcParams['figure.figsize'] = (10, 8)
+        # show a plot of the data
+        plot = bar_data.df.plot(use_index=True, y='open' )
+        plot.add_line(plt.Line2D(bar_data.df.index, bar_data.df.close, color='red', linewidth=1, label='close'))
+        # title the axes
+        plot.set_title('Apple Stock Price')
+        plot.set_ylabel('Price')
+        plot.set_xlabel('Date')
+        # save the plot to a file
+        fig = plot.get_figure()
+        img_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'static/resources/img/')
+        fig.savefig(img_dir + symbol_ + '_plot.png')
+        result['plot_img'] =  symbol_ + '_plot.png'
+        if with_plot:
+            return [bar_data, result]
         return bar_data
     
     except Exception as e:
@@ -141,8 +159,10 @@ def process_data_for_new_model(symbol_, start_date, end_date, result={}):
     
     try:
         # Get bar data for the stock
-        bar_data = get_stock_data(symbol_, start_date, end_date, result=result)
-
+        res = get_stock_data(symbol_, start_date, end_date, with_plot=True)
+        result["plot_img"] = res[1]['plot_img']
+        bar_data = res[0]
+        
         #if bar_data is not empty, then save the data
         if len(bar_data) > 0:
             # Save the apple_bars dataframe to a pickle file
@@ -367,9 +387,9 @@ def predict(symbol_, date_, result={}):
 def test():
   #  end = dt.datetime.now().date() - dt.timedelta(days=1)
   #  start = end - dt.timedelta(days=end.day)
-  #  process_data_for_new_model("dfsdews", start, end)    
+  process_data_for_new_model("aapl", "2022-07-20", "2022-07-28", result={})    
   #train_model("aapl", [750, 100, 30], {}) 
-  predict("aapl", "2022-07-25", {}) 
+  #predict("aapl", "2022-07-25", {}) 
     
 if __name__ == "__main__":
     test()

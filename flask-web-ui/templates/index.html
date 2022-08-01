@@ -162,10 +162,13 @@
                                 $("#datepicker-end").val("");
                                 //reenable the button once the model is created
                                 $("#create-model-btn").prop("disabled", false);
+                                $('.hidden-img').show();// unhides all the images with the class "hidden-img"
+                                //show the plot of the model
+                                $("#stock-plot-img").before("<p></p><p>Model Plot:</p>");
+                                $("#stock-plot-img").attr("src", "{{ url_for('static', filename='resources/img/') }}".concat(data.plot_img));
                                 //show heatmap of the model
                                 $("#heatmap-img").before("<p></p><p>Heatmap of the confusion matrix:</p>");
                                 //unhide the image
-                                $('.hidden-img').show();// unhides all the images with the class "hidden-img"
                                 //set the image source to the heatmap image
                                 $("#heatmap-img").attr("src", "{{url_for('static',filename='resources/img/')}}".concat(data.heatmap_img));
                                 //set the image source to the model loss image
@@ -186,6 +189,10 @@
                     }
                 });
             </script>
+            <!--plot of stock-->
+            <div class="hidden-img">
+                <img id="stock-plot-img" src="" width="500px">
+            </div>   
             <!--heatmap image-->
             <div class="hidden-img"><img id="heatmap-img" src="" width="500px"></div>
             <!--model loss plot image-->

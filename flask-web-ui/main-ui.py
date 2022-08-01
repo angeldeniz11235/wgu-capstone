@@ -46,7 +46,7 @@ def logout():
 
 @app.route('/createmodel', methods=['POST'])
 def create_model():
-    from ml_models import train_model, create_model
+    from ml_models import train_model, process_data_for_new_model
     import datetime as dt
     nn_layers = request.form.getlist('hiddenLayers')
     symbol = request.form['symbol']
@@ -55,7 +55,7 @@ def create_model():
     #dictionary to store the results
     mc_res = {}
     #create new thread to create model
-    cm_thread = threading.Thread(target=create_model, args=(symbol, start, end, mc_res))
+    cm_thread = threading.Thread(target=process_data_for_new_model, args=(symbol, start, end, mc_res))
     cm_thread.start()
     cm_thread.join()
     #if model creation was not successful then return error message
@@ -95,6 +95,16 @@ def check_valid_date():
         return jsonify({'valid': 'false'})
     else:
         return jsonify({'valid': 'true'})
+    
+#route to predict if a stock will go up or down on a given date
+@app.route('/predict', methods=['POST'])
+def predict():
+    from ml_models import predict
+    symbol = request.form['symbol']
+    date = request.form['date']
+    res = {}
+    predict(symbol, date, res)
+    return jsonify(res)
     
 if __name__ == '__main__':
     app.run(debug=True)

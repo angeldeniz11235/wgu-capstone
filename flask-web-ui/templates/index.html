@@ -220,6 +220,50 @@
                 <div id="prediction-err-msg"><p></p></div>
             </p>
             <a href="#" id="predict-btn"><button>Predict</button></a>
+            <div id="prediction-msg"></div>
+            <script type="text/javascript">
+                $("a#predict-btn").click(function(event){
+                    //dissable default behaviour of the button
+                    event.preventDefault();
+                    //get the symbol from the input
+                    var symbol = $("#prediction-symbol").val();
+                    //get the date from the datepicker
+                    var date = $("#datepicker-prediction").val();
+                    //clear the prediction message
+                    $("#prediction-msg").empty();
+                    if (symbol != ""){
+                        $.ajax({
+                            url: "http://localhost:5000/predict",
+                            type: "POST",
+                            data: {
+                                symbol: symbol,
+                                date: date,
+                            },
+                            success: function(data){
+                                console.log(data);
+                                //if data.error is not empty
+                                if (data.error != undefined){
+                                    $("#prediction-err-msg").html(data.error);
+                                }
+                                else if (data.prediction != ""){
+                                    if (data.prediction == 'gain'){
+                                        $("#prediction-msg").append(`<p> Prediction: According to the model, ${symbol} stock will increase on ${date}</p>`);
+                                    }
+                                    else{
+                                        $("#prediction-msg").append(`<p> Prediction: According to the model, ${symbol} stock will decrease on ${date}</p>`);
+                                    }
+                                }
+                                $("#prediction-symbol").val("");
+                                $("#datepicker-prediction").val("");
+                            },
+                        });
+                    }
+                    //message if symbol is empty
+                    else{
+                        $("#prediction-err-msg").html("Please enter a stock symbol");
+                    }
+                });
+            </script>
         </div>
     </body>
 </html>

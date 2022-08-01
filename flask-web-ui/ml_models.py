@@ -20,24 +20,128 @@ from tensorflow.keras import layers
 from tensorflow.keras import activations
 from sklearn.metrics import confusion_matrix, classification_report
 
-def create_model(symbol_, start_date, end_date, result={}):
-    
+def get_stock_data(symbol_, start_, end_, result={}):
     try:
+        #check if timeframe is set, if not set it to minute
+        #hack to set a default timeframe
+        timeframe = TimeFrame.Minute
+            
         #convert start_date and end_date to datetime objects
-        start_date = dt.datetime.strptime(start_date, '%Y-%m-%d')
-        end_date = dt.datetime.strptime(end_date, '%Y-%m-%d')
+        start_date = dt.datetime.strptime(start_, '%Y-%m-%d')
+        end_date = dt.datetime.strptime(end_, '%Y-%m-%d')
         
         print("Creating model for: " + symbol_ + " from " + start_date.strftime("%Y-%m-%d") + " to " + end_date.strftime("%Y-%m-%d"))
         # Import the API keys
-        api_id = "PKLXRG5MYKH326I8J1DV"
-        api_secret = "TxPfLNWc7HlulXh17NLCX0ser8wrlqXmbjYKriiB"
+        api_id = "PKX7LJVBEOAWQB6L7HSR"
+        api_secret = "tz7PzLbQgH3oFcrTUZSWTholaaOmQECPnIz5MbWV"
 
         # Create the REST API object for paper trading
         rest_api = REST(api_id, api_secret,'https://paper-api.alpaca.markets')
         
         print("Getting data for:", symbol_)
-        # Get bar data for apple stock from the last 2 years
-        bar_data = rest_api.get_bars(symbol_, TimeFrame.Minute, start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"))
+        # Get bar data from the API
+        #if dates are the same, get the data for the given date
+        bar_data = []
+        if start_date == end_date:
+            #start_date is beginning of the day, end_date is end of the day
+            start_date = dt.datetime.combine(start_date, dt.time(0, 0, 0))
+            end_date = dt.datetime.combine(end_date, dt.time(23, 59, 59))
+            bar_data = rest_api.get_bars(symbol=symbol_, timeframe=timeframe, start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"))
+        else: 
+            bar_data = rest_api.get_bars(symbol=symbol_, timeframe=timeframe, start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"))
+        return bar_data
+    
+    except Exception as e:
+        print("Error getting data for:", symbol_)
+        print(e)
+        result['error'] = "Error getting data for: " + symbol_
+
+#this function is used to process the data used for prediction       
+def process_bar_data(bar_data, symbol_, result={}):
+    #set bar_data to the dataframe from bar_data.df
+        bar_data = bar_data.df
+        
+        print("Processing data for:", symbol_)
+        #convert the dataframe index to a column
+        bar_data['DateTime'] = pd.to_datetime(bar_data.index) 
+        # remove the index from the dataframe
+        bar_data = bar_data.reset_index(drop=True)
+        
+        
+        #drop all columns except for the DateTime and the vwap columns
+        bar_data = bar_data.drop(columns=['open', 'high', 'low', 'close', 'volume','trade_count'])
+
+        #create an array of all the unique dates in the dataframe
+        dates = bar_data['DateTime'].dt.date.unique()
+        # make dates to list
+        dates = dates.tolist()
+        dates = list(map(lambda x: x.strftime('%Y-%m-%d'), dates))
+        
+        # in a new dataframe, for each date in the array, create a columns for every vwap value for that date
+        tmp_df = pd.DataFrame(index=dates, columns=range(0, 1000))
+
+        # get all vwap values for each date
+        for date in dates:
+            # get the vwap values for that date
+            vwap = bar_data[bar_data['DateTime'].dt.strftime('%Y-%m-%d') == date]['vwap'].tolist()
+            # fill vwap list with zeros to match the length of the columns
+            vwap = vwap + [0] * (1000 - len(vwap))
+            # create a column for that date
+            tmp_df.loc[date] = vwap
+        # set bar_data to the tmp_df
+        bar_data = tmp_df
+        
+        # set 'gain' column to 1 if column '0' is less than the last non-zero column in the row
+        bar_data['gain'] = bar_data.apply(lambda x: True if x[0] < x[x[x>0].last_valid_index()] else False, axis=1)
+
+        #drop index column
+        bar_data.reset_index(drop=True, inplace=True)
+        
+        
+        # function drops any rows with more than 40% 0 values
+        def drop_rows_with_many_zeros(df):
+            counts =(df==0).astype(int).sum(axis=1)
+            df = df[counts < len(df.columns)*0.4]
+            return df
+
+        # function that replaces any nan values with the last non-nan value
+        def replace_nan_with_last_non_nan(df):
+            for row_indx in range(len(df)):
+                last_non_nan_value = df.iloc[row_indx,0]
+                for col_indx, val in enumerate(df.iloc[row_indx,:]):
+                    if not pd.notna(val):
+                        df.iloc[row_indx,col_indx] = last_non_nan_value
+                    else:
+                        last_non_nan_value = val
+            return df
+
+        #only keep values that are not equal to 0 except for the 'gain' column
+        nan_value = float('NaN')
+
+        #replace all 0s with NaN
+        bar_data.replace(0, nan_value, inplace=True)
+
+        #drop rows with more than 40% 0 values
+        bar_data = drop_rows_with_many_zeros(bar_data)
+
+        #replace nan values with the last non-nan value
+        bar_data = replace_nan_with_last_non_nan(bar_data)
+
+
+        # for the 'gain' column, replace all True with 1 and all False with 0
+        bar_data.replace(True, 1, inplace=True)
+        bar_data.replace(False, 0, inplace=True)
+
+        # remove all columns between 360 and 999
+        bar_data.drop(bar_data.columns[360:1000], axis=1, inplace=True)  
+
+        return bar_data
+        
+def process_data_for_new_model(symbol_, start_date, end_date, result={}):
+    
+    try:
+        # Get bar data for the stock
+        bar_data = get_stock_data(symbol_, start_date, end_date, result=result)
 
         #if bar_data is not empty, then save the data
         if len(bar_data) > 0:
@@ -54,7 +158,7 @@ def create_model(symbol_, start_date, end_date, result={}):
         
         print("Processing data for:", symbol_)
         #convert the dataframe index to a column
-        bar_data['DateTime'] = bar_data.index.to_pydatetime()
+        bar_data['DateTime'] = pd.to_datetime(bar_data.index) 
         # remove the index from the dataframe
         bar_data = bar_data.reset_index(drop=True)
         
@@ -160,6 +264,10 @@ def train_model(symbol_, nn_layers=[], result={}):
         
         # create the neural network architecture
         model = Sequential()
+        
+        # add the first layer
+        model.add(Dense(units=360, activation=activations.gelu, input_shape=(X_train.shape[1],)))
+        
         # check if the nn_layers is empty
         if nn_layers != []:
             for num_nodes in nn_layers:
@@ -223,12 +331,45 @@ def train_model(symbol_, nn_layers=[], result={}):
         print('ML Training - Error:', e)
         result['success'] = False
         result['error'] = str(e)
+
+#this function is used to predict if the stock will gain or lose on a given day based on the model
+def predict(symbol_, date_, result={}):
+    try:
+        #load the model
+        model = tf.keras.models.load_model(f'models/{symbol_}_model_ML.h5')
+        print('ML Prediction - Model loaded for:', symbol_)
+        #download the data (start and end dates are the same) for the given symbol
+        bar_data = get_stock_data(symbol_, date_, date_, result)
+        bar_data = process_bar_data(bar_data, symbol_, result)
+        print('ML Prediction - Data loaded for:', symbol_)
+        #get the data for the given date
+        X = bar_data.drop('gain', axis=1).values
+        y = bar_data['gain'].values
+        #scale the data
+        scaler = MinMaxScaler()
+        scaler.fit(X)
+        X = scaler.transform(X)
+        #predict the data
+        prediction = model.predict(X)
+        #if the prediction is greater than 0.5 then 1 else 0
+        if prediction > 0.5:
+            result['prediction'] = 'gain'
+        else:
+            result['prediction'] = 'loss'
+        result['success'] = True
+        print('ML Prediction - Prediction done for:', symbol_)
+        print('ML Prediction - Prediction:', result['prediction'])
+    except Exception as e:
+        print('ML Prediction - Error:', e)
+        result['success'] = False
+        result['error'] = str(e)
     
 def test():
   #  end = dt.datetime.now().date() - dt.timedelta(days=1)
   #  start = end - dt.timedelta(days=end.day)
-  #  create_model("dfsdews", start, end)    
-  train_model("aapl", [750, 100, 30], {})  
+  #  process_data_for_new_model("dfsdews", start, end)    
+  #train_model("aapl", [750, 100, 30], {}) 
+  predict("aapl", "2022-07-25", {}) 
     
 if __name__ == "__main__":
     test()

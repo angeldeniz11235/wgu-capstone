@@ -77,6 +77,7 @@ def create_model():
     res = {'status': 'Model for ' + symbol + ' created successfully.'}
     
     #add the img paths (plots/charts) to the response
+    res['plot_img'] =  mc_res['plot_img']
     res['heatmap_img'] = tm_res['heatmap_img']
     res['model_loss_img'] = tm_res['model_loss_img']
     

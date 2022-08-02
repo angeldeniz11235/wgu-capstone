@@ -20,7 +20,7 @@ from tensorflow.keras import layers
 from tensorflow.keras import activations
 from sklearn.metrics import confusion_matrix, classification_report
 
-def get_stock_data(symbol_, start_, end_, result={}, with_plot=False):
+def get_stock_data(symbol_, start_, end_, result={}):
     try:
         #check if timeframe is set, if not set it to minute
         #hack to set a default timeframe
@@ -40,13 +40,17 @@ def get_stock_data(symbol_, start_, end_, result={}, with_plot=False):
         
         print("Getting data for:", symbol_)
         # Get bar data from the API
-        #if dates are the same, get the data for the given date
+        #if dates are the same, and dates are today, subtract 15 minutes from end date
         bar_data = []
-        if start_date == end_date:
+        if dt.datetime.now().strftime("%Y-%m-%d") == start_date.strftime("%Y-%m-%d"):
             #start_date is beginning of the day, end_date is end of the day
             start_date = dt.datetime.combine(start_date, dt.time(0, 0, 0))
-            end_date = dt.datetime.combine(end_date, dt.time(23, 59, 59))
-            bar_data = rest_api.get_bars(symbol=symbol_, timeframe=timeframe, start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"))
+            end_date = (dt.datetime.now() - dt.timedelta(minutes=15)) 
+            bar_data = rest_api.get_bars(symbol=symbol_, timeframe=timeframe, start=start_date.isoformat("T")+"Z", end=end_date.isoformat("T")+"Z")
+        #if end date is today but start time is not today, subtract 15 minutes from end date
+        elif (dt.datetime.now().strftime("%Y-%m-%d") == end_date.strftime("%Y-%m-%d")) and not (dt.datetime.now().strftime("%Y-%m-%d") == start_date.strftime("%Y-%m-%d")): 
+            end_date = (dt.datetime.now() - dt.timedelta(minutes=15))
+            bar_data = rest_api.get_bars(symbol=symbol_, timeframe=timeframe, start=start_date.isoformat("T")+"Z", end=end_date.isoformat("T")+"Z")
         else: 
             bar_data = rest_api.get_bars(symbol=symbol_, timeframe=timeframe, start=start_date.strftime("%Y-%m-%d"), end=end_date.strftime("%Y-%m-%d"))
 
@@ -65,8 +69,7 @@ def get_stock_data(symbol_, start_, end_, result={}, with_plot=False):
         img_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'static/resources/img/')
         fig.savefig(img_dir + symbol_ + '_plot.png')
         result['plot_img'] =  symbol_ + '_plot.png'
-        if with_plot:
-            return [bar_data, result]
+        
         return bar_data
     
     except Exception as e:
@@ -159,9 +162,10 @@ def process_data_for_new_model(symbol_, start_date, end_date, result={}):
     
     try:
         # Get bar data for the stock
-        res = get_stock_data(symbol_, start_date, end_date, with_plot=True)
-        result["plot_img"] = res[1]['plot_img']
-        bar_data = res[0]
+        bar_data = get_stock_data(symbol_, start_date, end_date)
+        
+        #save the bar_data plot png name to result
+        result['plot_img'] =  symbol_ + '_plot.png'
         
         #if bar_data is not empty, then save the data
         if len(bar_data) > 0:
@@ -387,9 +391,9 @@ def predict(symbol_, date_, result={}):
 def test():
   #  end = dt.datetime.now().date() - dt.timedelta(days=1)
   #  start = end - dt.timedelta(days=end.day)
-  process_data_for_new_model("aapl", "2022-07-20", "2022-07-28", result={})    
+  # process_data_for_new_model("aapl", "2022-07-20", "2022-07-28", result={})    
   #train_model("aapl", [750, 100, 30], {}) 
-  #predict("aapl", "2022-07-25", {}) 
+  predict("aapl", "2022-08-02", {}) 
     
 if __name__ == "__main__":
     test()

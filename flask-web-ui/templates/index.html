@@ -125,6 +125,8 @@
                 $("a#create-model-btn").click(function(event){
                     //dissable default behaviour of the button
                     event.preventDefault();
+                    //delete all p tags within the new-model-visuals div
+                    $('#new-model-visuals p').remove();
                     //get the symbol from the input
                     var symbol = $("#input-symbol").val();
                     //get the start and end dates from the datepickers
@@ -189,15 +191,17 @@
                     }
                 });
             </script>
-            <!--plot of stock-->
-            <div class="hidden-img">
-                <img id="stock-plot-img" src="" width="500px">
-            </div>   
-            <!--heatmap image-->
-            <div class="hidden-img"><img id="heatmap-img" src="" width="500px"></div>
-            <!--model loss plot image-->
-            <div class="hidden-img"><img id="model-loss-img" src=""
-                    width="500px"></div>
+            <div id="new-model-visuals">
+                <!--plot of stock-->
+                <div class="hidden-img">
+                    <img id="stock-plot-img" src="" width="500px">
+                </div>
+                <!--heatmap image-->
+                <div class="hidden-img"><img id="heatmap-img" src="" width="500px"></div>
+                <!--model loss plot image-->
+                <div class="hidden-img"><img id="model-loss-img" src=""
+                        width="500px"></div>
+            </div>
         </div>
         <!--Prediction Section-->
         <div id="prediction-section">
@@ -213,7 +217,8 @@
             </p>
             <p>
                 Enter the stock symbol:
-                <input type="text" name="symbol" id="prediction-symbol" placeholder="Stock Symbol">
+                <input type="text" name="symbol" id="prediction-symbol"
+                    placeholder="Stock Symbol">
                 <script type="text/javascript">
                     //set a default value for the stock symbol input
                     //get the selected model from the dropdown model-selector and split it by '_'
@@ -223,7 +228,8 @@
                     //set the default value of the stock symbol input to the model name
                     $("#prediction-symbol").val(modelName);
                 </script>
-                <p>Pick a date to predict: <input type="text" id="datepicker-prediction"></p>
+                <p>Pick a date to predict: <input type="text"
+                        id="datepicker-prediction"></p>
                 <div id="prediction-err-msg"><p></p></div>
             </p>
             <a href="#" id="predict-btn"><button>Predict</button></a>

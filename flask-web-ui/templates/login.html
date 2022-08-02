@@ -1,17 +1,29 @@
 <!--Flask templat for user login-->
 <html>
+   <head>
+      <title>Login</title>
+      <!--bootstrap css-->
+      <link rel="stylesheet"
+         href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css"
+         integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu"
+         crossorigin="anonymous">
+      <script
+         src="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/js/bootstrap.min.js"
+         integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd"
+         crossorigin="anonymous"></script>
+   </head>
    <body>
       {%if session['invalid-login'] is defined%}
       <div class="alert alert-danger">
          <strong>Invalid Login - Please Try Again</strong>
       </div>
       {% endif %}
-      <form action = "http://localhost:5000/login" method = "post">
+      <form action="http://localhost:5000/login" method="post">
          <p>Enter Name:</p>
-         <p><input type = "text" name = "username" /></p>
+         <p><input type="text" name="username" /></p>
          <p>Enter Password:</p>
-         <p><input type = "text" name = "password" /></p>
-         <p><input type = "submit" value = "submit" /></p>
+         <p><input type="text" name="password" /></p>
+         <p><input type="submit" value="submit" /></p>
       </form>
    </body>
 </html>

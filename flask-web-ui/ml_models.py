@@ -1,5 +1,6 @@
 from ntpath import realpath
 import os
+from sqlite3 import Timestamp
 from alpaca_trade_api.rest import REST, TimeFrame
 from alpaca_trade_api.stream import Stream
 import datetime as dt
@@ -75,6 +76,11 @@ def get_stock_data(symbol_, start_, end_, result={}):
     except Exception as e:
         print("Error getting data for:", symbol_)
         print(e)
+        #append error to errorLog.txt
+        Timestamp = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open("errorLog.txt", "a") as f:
+            f.write(Timestamp + ": Error getting data for: " + symbol_ + "\n")
+            f.write(str(e) + "\n")
         result['error'] = "Error getting data for: " + symbol_
 
 #this function is used to process the data used for prediction       
@@ -174,6 +180,11 @@ def process_data_for_new_model(symbol_, start_date, end_date, result={}):
         # else, return an error message
         else:
             print("No data found for:", symbol_)
+            #append error to errorLog.txt
+            Timestamp = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            with open("errorLog.txt", "a") as f:
+                f.write(Timestamp + ": Error getting data for: " + symbol_ + "\n")
+                f.write(str(e) + "\n")
             result['error'] = "No data found for: " + symbol_
             return
         
@@ -268,6 +279,11 @@ def process_data_for_new_model(symbol_, start_date, end_date, result={}):
    
     except Exception as e:
         print('ML Training - Error:', e)
+        #append error to errorLog.txt
+        Timestamp = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open("errorLog.txt", "a") as f:
+            f.write(Timestamp + ": Error getting data for: " + symbol_ + "\n")
+            f.write(str(e) + "\n")
         result['success'] = False
         result['error'] = str(e)
     
@@ -353,6 +369,11 @@ def train_model(symbol_, nn_layers=[], result={}):
         
     except Exception as e:
         print('ML Training - Error:', e)
+        #append error to errorLog.txt
+        Timestamp = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open("errorLog.txt", "a") as f:
+            f.write(Timestamp + ": Error getting data for: " + symbol_ + "\n")
+            f.write(str(e) + "\n")
         result['success'] = False
         result['error'] = str(e)
 
@@ -385,6 +406,11 @@ def predict(symbol_, date_, result={}):
         print('ML Prediction - Prediction:', result['prediction'])
     except Exception as e:
         print('ML Prediction - Error:', e)
+        #append error to errorLog.txt
+        Timestamp = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open("errorLog.txt", "a") as f:
+            f.write(Timestamp + ": Error getting data for: " + symbol_ + "\n")
+            f.write(str(e) + "\n")
         result['success'] = False
         result['error'] = str(e)
     

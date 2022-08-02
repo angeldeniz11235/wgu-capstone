@@ -19,7 +19,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Activation,Dropout
 from tensorflow.keras import layers
 from tensorflow.keras import activations
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 
 def get_stock_data(symbol_, start_, end_, result={}):
     try:
@@ -344,6 +344,9 @@ def train_model(symbol_, nn_layers=[], result={}):
         print('ML Training - Model saved for:', symbol_)
         
         result['success'] = True
+
+        #save the model accuracy to the result dictionary
+        result['model_accuracy'] = str(round(accuracy_score(y_test, predictions) * 100, 2)) + '%'
 
         #build seaborn heatmap of the confusion matrix for the model and save it to a png file named after the symbol
         fig, ax = plt.subplots(figsize=(10,10))

@@ -80,6 +80,9 @@ def create_model():
     res['plot_img'] =  mc_res['plot_img']
     res['heatmap_img'] = tm_res['heatmap_img']
     res['model_loss_img'] = tm_res['model_loss_img']
+
+    #add the model accuracy to the response
+    res['model_accuracy'] = tm_res['model_accuracy']
     
     #add the model info to the response
     return jsonify(res)

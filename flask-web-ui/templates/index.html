@@ -170,6 +170,7 @@
                             success: function(data){
                                 console.log(data);
                                 $("#model-creation-msg").html(data.status);
+                                $('#model-creation-msg').append('<p> The model is ' + data.model_accuracy + ' accurate.</p>');
                                 $("#input-symbol").val("");
                                 $("#datepicker-start").val("");
                                 $("#datepicker-end").val("");
